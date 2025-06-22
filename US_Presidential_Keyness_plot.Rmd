@@ -1,0 +1,328 @@
+---
+title: "US Presidential Keyness Plot"
+author: "Zahra Rahmani"
+date: "2025-06-20"
+output: html_document
+---
+
+In this project, I have investigated policies of US presidential candidates in the 2024 election. I have created word clouds from Harris and Trump's policy documents that shows their views and what issues they are focusing on.
+I have used text and pdf documents of Harris and Trump's policies extracted from their websites to create word clouds for each candidate.  
+
+Please reach out if you found any mistakes or have trouble running this script!
+
+# 1. Preliminaries
+
+Let's first load the required packages!
+```{r}
+library(quanteda)
+library(quanteda.textmodels)
+library(quanteda.textplots)
+library(quanteda.textstats)
+library(ggplot2)
+library(pdftools)
+library(tidyverse)
+library(lattice)
+library(stringr)
+
+```
+# 2. Preprocessing
+
+## Kamala Harris
+
+First, I will import the documents related to Harris' policies. It consists of a document related to her policies towards Black community, another document related to the Latino community and the main "A New Way Forward" document which is 82 pages. 
+
+Loading data: These are documents related to Harris policies towards Black and Latino people. 
+```{r}
+
+agenda_black <- read.table(file = "Agenda_Black_Men.txt", header = FALSE, sep = "\t")
+agenda_latino <- read.table(file = "Agenda_Latino_Men.txt", header = FALSE, sep = "\t")
+```
+
+Renaming columns
+```{r}
+agenda_black <- agenda_black %>%
+  rename(sentence = V1)
+agenda_latino <- agenda_latino %>%
+  rename(sentence = V1)
+```
+
+This is Harris' policy book in pdf.
+```{r}
+harris_policy_book <- pdf_text("Harris_Policy_Book.pdf") %>%
+  read_lines() %>%
+  data.frame() 
+```
+
+Renaming columns
+```{r}
+harris_policy_book <- harris_policy_book %>%
+  rename(sentence = ".")
+```
+
+I will combine 3 datasets.
+```{r}
+harris <- rbind(agenda_latino, agenda_black, harris_policy_book)
+```
+
+Let's clean the data up! I will remove empty cells.
+```{r}
+# Let's get rid of empty cells
+harris <- harris %>%
+  filter(str_trim(sentence) != "")
+
+# Let's remove all numbers
+harris <- harris %>%
+  mutate(sentence = str_remove_all(sentence, "[0-9]"))
+
+# I won't remove symbols or punctuation mark, because later in the tokenization process, I will remove them
+
+# After removing numbers, there are some empty rows that need to be removed
+harris <- harris %>%
+  filter(str_trim(sentence) != "")
+
+# And lastly, drop rows that contain single letters. I will get rid of them.
+harris <- harris %>%
+  filter(!str_detect(str_trim(sentence), "^[A-Za-z]$"))
+```
+
+I will create a column to label each row with the name of candidate
+```{r}
+harris <- harris %>%
+  mutate(Candidate = "Harris")
+```
+
+Creating a corpus from a dataframe
+```{r}
+corp_harris <- corpus(harris, text_field = "sentence")
+```
+
+```{r}
+head(summary(corp_harris), 20)
+```
+
+# 3. Tokenization
+
+In this step, let's conduct tokenization and create a document feature matrix.
+```{r}
+harris_toks <- tokens(corp_harris, remove_punct = TRUE, remove_symbols = TRUE, remove_url = TRUE) %>%
+  tokens_remove(stopwords("en")) %>%   # Removing all stop words
+  tokens_tolower()                    # Making everything lowercase
+  
+harris_toks
+```
+The phrase "small businesses" has high frequency in the data but they are presented as separate features, I will combine them as one token.
+```{r}
+harris_toks <- tokens_compound(harris_toks, phrase(c("small businesses")))
+```
+
+I will create a document feature matrix.
+```{r}
+harris_dfmat <- harris_toks %>%
+  dfm()
+```
+
+I will select only those features that have minimum frequency of 20.
+```{r}
+harris_dfmat <- dfm_trim(harris_dfmat, min_termfreq = 20)
+```
+
+```{r}
+print(topfeatures(harris_dfmat))
+```
+I will remove tokens that have high frequency but provide no insight about the data such as president.
+
+```{r}
+harris_dfmat <- dfm_remove(harris_dfmat, pattern = c("president", "vice", "harris", "men", "trump", "new", "million"))
+```
+
+Let's look at the top features after removing features that are not helpful.
+```{r}
+print(topfeatures(harris_dfmat))
+```
+It seems that tax and job in other words employment are the issues that Harris cares. Also, high usage of families, workers, care and costs shows that Harris emphaises on working families' welfare. 
+
+Let's create a wordcloud.
+```{r}
+textplot_wordcloud(harris_dfmat, max_words = 250)
+```
+There are some features that need to be removed like also, percent, take, etc.
+```{r}
+
+harris_dfmat <- dfm_remove(harris_dfmat, pattern = c("making", "september", "back", "including", "nearly", "without", "even", "dollars", "forward", "also", "just", "billion", "march", "per", "q", "harris’s", "trump’s", "one", "like", "percent", "take", "across", "u.s", "can", "every", "way", "august", "first-time", "department", "donald", "https", "biden-harris", "harris-walz", "made", "found", "walz"))
+
+# The words "way" and "forward" have been removed because the title of the document is "A New Way Forward" so these words have been repeated more often.
+```
+
+Let's create another word cloud after removing features.
+```{r}
+textplot_wordcloud(harris_dfmat, max_words = 250)
+```
+This is the word cloud for the documents related to Harris's policies which include the pdf document on her website and other two documents related to Black and Latino people. I this word cloud, tax, black, families, latino, americans, care, costs, business, jobs, workers, communities, housing, affordable, small_businesses, entrepreneurs, manufacturing.
+
+High frequency of these words shows that Harris will have plans for tax, she will also address housing and costs probably for the working families. In addition, she's going to support businesses including small businesses and entrepreneurs. Black and Latino are also of high frequency in this word cloud, therefore issues related to these communities will be her priority.   
+
+Now, I will create a word cloud only from the "A New Way Forward" document and exclude policy documents related to Latino and Black people.
+
+```{r}
+harris_2 <- pdf_text("Harris_Policy_Book.pdf") %>%
+  read_lines() %>%
+  data.frame() 
+harris_2 <- harris_2 %>%
+  rename(sentence = ".")
+```
+
+```{r}
+
+# Let's get rid of empty cells
+harris_2 <- harris_2 %>%
+  filter(str_trim(sentence) != "")
+
+# Let's remove all numbers
+harris_2 <- harris_2 %>%
+  mutate(sentence = str_remove_all(sentence, "[0-9]"))
+
+# After removing numbers, there are some empty rows that need to be removed
+harris_2 <- harris_2 %>%
+  filter(str_trim(sentence) != "")
+
+# And lastly, drop rows that contain single letters. I will get rid of them.
+harris_2 <- harris_2 %>%
+  filter(!str_detect(str_trim(sentence), "^[A-Za-z]$"))
+
+harris_2 <- harris_2 %>%
+  mutate(Candidate = "Harris")
+```
+
+Creating a corpus from a dataframe
+```{r}
+corp_harris_2 <- corpus(harris_2, text_field = "sentence")
+
+harris_toks_2 <- tokens(corp_harris_2, remove_punct = TRUE, remove_symbols = TRUE, remove_url = TRUE) %>%
+  tokens_remove(stopwords("en")) %>%   # Removing all stop words
+  tokens_tolower()                    # Making everything lowercase
+  
+```
+
+```{r}
+harris_toks_2 <- tokens_compound(harris_toks_2, phrase(c("small businesses")))
+```
+
+```{r}
+harris_toks_2 <- tokens_replace(harris_toks_2,
+                       pattern = c("american","taxes"),
+                       replacement = c("americans","tax"),
+                       valuetype = "fixed")
+```
+
+
+```{r}
+harris_dfmat_2 <- harris_toks_2 %>%
+  dfm()
+```
+
+I will select only those features that have minimum frequency of 20.
+```{r}
+harris_dfmat_2 <- dfm_trim(harris_dfmat_2, min_termfreq = 20)
+```
+
+```{r}
+print(topfeatures(harris_dfmat_2))
+```
+```{r}
+harris_dfmat_2 <- dfm_remove(harris_dfmat_2, pattern = c("president", "vice", "harris", "new", "trump", "percent", "u.s", "million", "administration", "walz"))
+```
+
+```{r}
+print(topfeatures(harris_dfmat_2))
+```
+Again, top features show that she will address tax, issues related to working families such as housing, employment and businesses.
+```{r}
+harris_dfmat_2 <- dfm_remove(harris_dfmat_2, pattern = c("years", "factmade", "including", "september", "donald", "per", "harris’s", "trump’s", "august", "q", "also", "march", "can", "one", "across", "found", "biden-harris", "make", "https"))
+                                                         
+textplot_wordcloud(harris_dfmat_2, max_words = 250)
+```
+Again, the words that are used frequently are americans, tax, care, costs, workers, families, jobs, business, governor, affordable, housing and child. This word cloud shows Harris attitude and plans as a presidential cnadidate. 
+
+
+# Donald Trump
+
+Now, I will investigate the policy document associated with Donald Trump titled "2024 GOP Platform" which is available in the GitHub repository. The document consists of 16 pages. I will repeat the same steps as I used for Harris to create a word cloud.
+
+Loading Trump's data
+```{r}
+trump_policy_book <- pdf_text("Trump_Platform.pdf") %>%
+  read_lines() %>%
+  data.frame()
+
+```
+
+```{r}
+trump <- trump_policy_book %>%
+  rename(sentence = ".")
+```
+
+
+# Let's get rid of empty cells
+```{r}
+trump <- trump %>%
+  filter(str_trim(sentence) != "")
+
+# Let's remove all numbers
+trump <- trump %>%
+  mutate(sentence = str_remove_all(sentence, "[0-9]"))
+
+# I won't remove symbols or punctuation mark, because later in the tokenization process, I will remove them.
+
+# After removing numbers, there are some empty rows that need to be removed.
+trump <- trump %>%
+  filter(str_trim(sentence) != "")
+```
+
+I will create a column to label each row with the name of candidate
+```{r}
+trump <- trump %>%
+  mutate(Candidate = "Trump")
+```
+
+Let's create a corpus from a dataframe
+```{r}
+corp_trump <- corpus(trump, text_field = "sentence")
+```
+
+```{r}
+head(summary(corp_trump), 20)
+```
+
+Tokenising and creating a document feature matrix
+```{r}
+trump_toks <- tokens(corp_trump, remove_punct = TRUE, remove_symbols = TRUE, remove_numbers = TRUE, remove_url = TRUE) %>%
+  tokens_remove(stopwords("en")) %>%
+  tokens_tolower()
+  
+trump_toks
+```
+Creating a document feature matrix
+```{r}
+trump_dfmat <- trump_toks %>%
+  dfm()
+```
+
+```{r}
+print(topfeatures(trump_dfmat), 20)
+```
+These features have the highest frequencies. The most frequent feature is american with the frequency of 74 while the most frequent feature in Harris document has the frequency of 196. This is because Harris's document is way bigger.
+
+```{r}
+textplot_wordcloud(trump_dfmat, max_words = 180)
+```
+
+
+```{r}
+trump_dfmat <- dfm_remove(trump_dfmat, pattern = c("every", "years", "even", "us", "also", "Biden’s", "made", "trump’s", "can", "don’t", "chapter", "including", "one", "without", "u.s", "like", "millions"))
+```
+
+```{r}
+textplot_wordcloud(trump_dfmat, max_words = 180)
+```
+
+The word Republicans is as frequent as american. Other frequent words are america, restore, great, people, education, protect and support which shows that restoring america, protecting it and making it a great country is his prorities. Also education looks a major focus for him.  
