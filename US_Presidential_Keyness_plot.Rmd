@@ -325,4 +325,4 @@ trump_dfmat <- dfm_remove(trump_dfmat, pattern = c("every", "years", "even", "us
 textplot_wordcloud(trump_dfmat, max_words = 180)
 ```
 
-The word Republicans is as frequent as american. Other frequent words are america, restore, great, people, education, protect and support which shows that restoring america, protecting it and making it a great country is his prorities. Also education looks a major focus for him.  
+The word Republicans is as frequent as american. Other frequent words are america, restore, great, people, education, protect and support which shows that restoring america, protecting it and making it a great country is his prorities. Also education looks a major focus for him.
