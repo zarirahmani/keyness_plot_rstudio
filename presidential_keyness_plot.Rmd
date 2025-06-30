@@ -7,8 +7,7 @@ output: html_document
 
 # Analysis of US Presidential Candidates' Policies
 
-In this project, I have investigated policies of US presidential candidates in the 2024 election. I have created word clouds from Harris and Trump's policy documents that reveal what issues they are focusing on and their plans after being elected.
-I have used policy documents of Harris and Trump extracted from their websites to create word clouds for each candidate and a keyness plot.  
+In this project, I have investigated policies of US presidential candidates in the 2024 election. I have created word clouds for Harris and Trump’s policies that reveal what issues they are focusing on and their plans after being elected. I have used policy documents of Harris and Trump extracted from their websites to create a keyness plot and word clouds for each candidate.
 
 Please reach out if you found any mistakes or have trouble running this script!
 
@@ -112,7 +111,7 @@ harris_toks <- tokens(corp_harris, remove_punct = TRUE, remove_symbols = TRUE, r
   
 harris_toks
 ```
-The phrase "small businesses" has high frequency in the data but they are presented as separate features, I will combine them as one type. I will also change taxes to tax since both have high frequencies. I will also change business to businesses because the words small and business have high frequencies apart from small businesses and if I transform business to businesses and is accompanied by the adjective small, it will be considered as "small businesses". 
+The phrase "small businesses" has high frequency in the data but they are presented as separate features, I will combine them as one type. I will also change "taxes" to "tax" since both have high frequencies. I will also change "business" to "businesses" because the words small and business have high frequencies apart from small businesses and if I transform business to businesses and is accompanied by the adjective small, it will be considered as “small businesses”.
 ```{r}
 
 harris_toks <- tokens_replace(harris_toks,
@@ -259,6 +258,13 @@ harris_dfmat_2 <- dfm_remove(harris_dfmat_2, pattern = c("years", "factmade", "i
 textplot_wordcloud(harris_dfmat_2, max_words = 250)
 ```
 
+Saving the plot
+```{r}
+png("plots/harris.png", width = 1200, height = 1000)
+textplot_wordcloud(harris_dfmat_2, max_words = 250)
+dev.off()
+```
+
 Again, the words that are used frequently are americans, tax, care, costs, workers, families, jobs, business, governor, affordable, housing and child. This word cloud shows Harris's attitude and plans as a presidential candidate. 
 
 
@@ -351,6 +357,14 @@ trump_dfmat <- dfm_remove(trump_dfmat, pattern = c("every", "years", "even", "us
 textplot_wordcloud(trump_dfmat, max_words = 180)
 ```
 
+Saving the plot
+```{r}
+png("plots/trump.png", width = 1200, height = 1000)
+textplot_wordcloud(trump_dfmat, max_words = 180)
+dev.off()
+```
+
+
 The word Republicans is as frequent as american. Other frequent words are america, restore, great, people, education, protect and support which shows that restoring america, protecting it and making it a great country is his priorities. Education also seems to be his major focus. But let's have a look at education in context to see what is Trump's view regarding "education".
 
 ```{r}
@@ -383,6 +397,14 @@ Let's draw a keyness plot:
 ```{r}
 textplot_keyness(tstat_key_policy)
 ```
+Saving the plot
+```{r}
+png("plots/keyness.png", width = 1000, height = 800)
+textplot_keyness(tstat_key_policy)
+dev.off()
+```
+
+
 Harris has used the word "small" apart from "small businesses". Let's have a look at the context where small has been used:
 ```{r}
 kw_small <- harris_toks %>%
