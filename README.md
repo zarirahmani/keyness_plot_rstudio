@@ -1,6 +1,6 @@
 # US Presidential Keyness Plot
 
-In this project, I have investigated policies of US presidential candidates in the 2024 election. I have created word clouds from Harris and Trump’s policy documents that reveal what issues they are focusing on and their plans after being elected. I have used policy documents of Harris and Trump extracted from their websites to create word clouds for each candidate and a keyness plot.
+In this project, I have investigated policies of US presidential candidates in the 2024 election. I have created word clouds for Harris and Trump’s policies that reveal what issues they are focusing on and their plans after being elected. I have used policy documents of Harris and Trump extracted from their websites to create a keyness plot and word clouds for each candidate.
 
 ## Word Cloud for Harris's Policies
 
